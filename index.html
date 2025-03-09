@@ -51,6 +51,19 @@
       font-size: 0.9em;
       color: #666;
     }
+    .toggle-button {
+      background: none;
+      border: none;
+      color: #4285F4;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    #customTerms {
+      display: none;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -58,31 +71,33 @@
   <p>Enter your project details below:</p>
   
   <label for="solarCost">Solar Cost ($):</label>
-  <input type="number" id="solarCost" placeholder="e.g. 30000">
+  <input type="text" id="solarCost" placeholder="e.g. 30000" inputmode="numeric">
   
   <label for="otherCost">Other Products Cost ($):</label>
-  <input type="number" id="otherCost" placeholder="e.g. 20000">
+  <input type="text" id="otherCost" placeholder="e.g. 20000" inputmode="numeric">
   
   <label for="eligibleAmount">Portion of Other Products Cost Eligible for Solar ($):</label>
-  <input type="number" id="eligibleAmount" placeholder="e.g. 15000">
+  <input type="text" id="eligibleAmount" placeholder="e.g. 15000" inputmode="numeric">
   
   <label for="electricBill">Current Monthly Electric Bill ($):</label>
-  <input type="number" id="electricBill" placeholder="e.g. 150">
+  <input type="text" id="electricBill" placeholder="e.g. 150" inputmode="numeric">
   
-  <!-- Custom Loan Terms: -->
-  <div class="small-text">
+  <!-- Toggle for custom loan terms -->
+  <button type="button" class="toggle-button" id="toggleTermsBtn">Show Custom Loan Terms</button>
+  
+  <div id="customTerms" class="small-text">
     <p><strong>Customize Loan Terms (optional):</strong></p>
     <label for="solarTerm">Solar Loan Term (years):</label>
-    <input type="number" id="solarTerm" placeholder="e.g. 20" value="20">
+    <input type="text" id="solarTerm" placeholder="e.g. 20" value="20" inputmode="numeric">
     
     <label for="solarRate">Solar Interest Rate (%):</label>
-    <input type="number" id="solarRate" placeholder="e.g. 5.99" value="5.99">
+    <input type="text" id="solarRate" placeholder="e.g. 5.99" value="5.99" inputmode="numeric">
     
     <label for="otherTerm">Other Products Loan Term (years):</label>
-    <input type="number" id="otherTerm" placeholder="e.g. 10" value="10">
+    <input type="text" id="otherTerm" placeholder="e.g. 10" value="10" inputmode="numeric">
     
     <label for="otherRate">Other Products Interest Rate (%):</label>
-    <input type="number" id="otherRate" placeholder="e.g. 8.99" value="8.99">
+    <input type="text" id="otherRate" placeholder="e.g. 8.99" value="8.99" inputmode="numeric">
   </div>
   
   <button id="calculateBtn">Calculate</button>
@@ -97,6 +112,49 @@
         maximumFractionDigits: 2
       });
     }
+    
+    // Format input field on blur and remove formatting on focus
+    function formatInputField(event) {
+      let el = event.target;
+      // Remove existing commas
+      let value = el.value.replace(/,/g, '');
+      if(value === "" || isNaN(value)) {
+        return;
+      }
+      let num = parseFloat(value);
+      // Only format if 5 digits or more
+      if(num >= 10000) {
+        el.value = num.toLocaleString('en-US', {maximumFractionDigits: 2});
+      } else {
+        // Optionally, you can still format for consistency
+        el.value = num.toLocaleString('en-US', {maximumFractionDigits: 2});
+      }
+    }
+    
+    function unformatInputField(event) {
+      let el = event.target;
+      el.value = el.value.replace(/,/g, '');
+    }
+    
+    // Add event listeners to input fields for formatting
+    let inputIds = ['solarCost', 'otherCost', 'eligibleAmount', 'electricBill', 'solarTerm', 'solarRate', 'otherTerm', 'otherRate'];
+    inputIds.forEach(id => {
+      let input = document.getElementById(id);
+      input.addEventListener('focus', unformatInputField);
+      input.addEventListener('blur', formatInputField);
+    });
+    
+    // Toggle for custom loan terms
+    document.getElementById('toggleTermsBtn').addEventListener('click', function() {
+      let customDiv = document.getElementById('customTerms');
+      if (customDiv.style.display === "none" || customDiv.style.display === "") {
+        customDiv.style.display = "block";
+        this.textContent = "Hide Custom Loan Terms";
+      } else {
+        customDiv.style.display = "none";
+        this.textContent = "Show Custom Loan Terms";
+      }
+    });
     
     // Calculate monthly payment using the amortization formula:
     // M = P * [r(1+r)^n] / [(1+r)^n - 1]
@@ -116,17 +174,17 @@
     }
     
     function calculate() {
-      // 1. Get user inputs
-      let solarCost = parseFloat(document.getElementById('solarCost').value) || 0;
-      let otherCost = parseFloat(document.getElementById('otherCost').value) || 0;
-      let eligibleAmount = parseFloat(document.getElementById('eligibleAmount').value) || 0;
-      let electricBill = parseFloat(document.getElementById('electricBill').value) || 0;
+      // 1. Get user inputs (removing commas before converting to numbers)
+      let solarCost = parseFloat(document.getElementById('solarCost').value.replace(/,/g, '')) || 0;
+      let otherCost = parseFloat(document.getElementById('otherCost').value.replace(/,/g, '')) || 0;
+      let eligibleAmount = parseFloat(document.getElementById('eligibleAmount').value.replace(/,/g, '')) || 0;
+      let electricBill = parseFloat(document.getElementById('electricBill').value.replace(/,/g, '')) || 0;
       
       // Get custom loan terms if provided
-      let solarTerm = parseFloat(document.getElementById('solarTerm').value) || 20;
-      let solarRate = parseFloat(document.getElementById('solarRate').value) || 5.99;
-      let otherTerm = parseFloat(document.getElementById('otherTerm').value) || 10;
-      let otherRate = parseFloat(document.getElementById('otherRate').value) || 8.99;
+      let solarTerm = parseFloat(document.getElementById('solarTerm').value.replace(/,/g, '')) || 20;
+      let solarRate = parseFloat(document.getElementById('solarRate').value.replace(/,/g, '')) || 5.99;
+      let otherTerm = parseFloat(document.getElementById('otherTerm').value.replace(/,/g, '')) || 10;
+      let otherRate = parseFloat(document.getElementById('otherRate').value.replace(/,/g, '')) || 8.99;
       
       // 2. Calculate total solar-eligible cost & tax credit
       let totalSolarEligible = solarCost + eligibleAmount;
@@ -178,7 +236,7 @@
       document.getElementById('results').innerHTML = output;
     }
     
-    // Add event listener to ensure the button works properly
+    // Add event listener to the calculate button
     document.getElementById('calculateBtn').addEventListener('click', calculate);
   </script>
 </body>
