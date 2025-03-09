@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Ensures proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solar Calculator</title>
+  <!-- Import Open Sans font -->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Open Sans', sans-serif; 
+      margin: 20px; 
+      background-color: #f7f7f7;
+      color: #333;
+      padding: 0 10px;
+    }
+    input, button { 
+      padding: 8px; 
+      margin: 5px 0; 
+      width: 100%; 
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4285F4;
+      color: white;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #357ae8;
+    }
+    .result { 
+      background: #fff; 
+      padding: 15px; 
+      margin-top: 20px; 
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #4285F4;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Solar Project Cost Calculator</h2>
+  <p>Enter your project details below:</p>
+  
+  <label for="solarCost">Solar Cost ($):</label>
+  <input type="number" id="solarCost" placeholder="e.g. 30000">
+  
+  <label for="otherCost">Other Products Cost ($):</label>
+  <input type="number" id="otherCost" placeholder="e.g. 20000">
+  
+  <label for="eligibleAmount">Portion of Other Products Cost Eligible for Solar ($):</label>
+  <input type="number" id="eligibleAmount" placeholder="e.g. 15000">
+  
+  <label for="electricBill">Current Monthly Electric Bill ($):</label>
+  <input type="number" id="electricBill" placeholder="e.g. 150">
+  
+  <!-- Added an id to the button for the event listener -->
+  <button id="calculateBtn">Calculate</button>
+  
+  <div id="results" class="result"></div>
+  
+  <script>
+    // Helper function to format numbers with commas and two decimals
+    function formatNumber(num) {
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+    
+    // Calculate monthly payment using the amortization formula:
+    // M = P * [r(1+r)^n] / [(1+r)^n - 1]
+    function calculateMonthlyPayment(principal, annualRate, termYears) {
+      let monthlyRate = (annualRate / 100) / 12;
+      let n = termYears * 12;
+      if (monthlyRate === 0) {
+        return principal / n;
+      }
+      return principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) 
+             / (Math.pow(1 + monthlyRate, n) - 1);
+    }
+    
+    // Projected electric bill after 'years', given an 8% annual increase
+    function projectedBill(currentBill, years) {
+      return currentBill * Math.pow(1.08, years);
+    }
+    
+    function calculate() {
+      // 1. Get user inputs
+      let solarCost = parseFloat(document.getElementById('solarCost').value) || 0;
+      let otherCost = parseFloat(document.getElementById('otherCost').value) || 0;
+      let eligibleAmount = parseFloat(document.getElementById('eligibleAmount').value) || 0;
+      let electricBill = parseFloat(document.getElementById('electricBill').value) || 0;
+      
+      // 2. Calculate total solar-eligible cost & tax credit
+      let totalSolarEligible = solarCost + eligibleAmount;
+      let taxCredit = 0.30 * totalSolarEligible;
+      
+      // 3. Calculate monthly payments
+      //    a) Solar portion: 20 years @ 5.99%
+      let solarPrincipal = solarCost + eligibleAmount; 
+      let monthlySolarPayment = calculateMonthlyPayment(solarPrincipal, 5.99, 20);
+      
+      //    b) Other product portion: 10 years @ 8.99%
+      let otherPrincipal = otherCost - eligibleAmount;
+      let monthlyOtherPayment = calculateMonthlyPayment(otherPrincipal, 8.99, 10);
+      
+      // 4. Calculate total monthly payment
+      let totalLoanPayment = monthlySolarPayment + monthlyOtherPayment;
+      
+      // 5. Effective Monthly Payment "Now" (subtracting current electric bill)
+      let netNow = totalLoanPayment - electricBill;
+      
+      // 6. Effective Monthly Payment after 5, 10, 15, 20 years
+      let net5  = totalLoanPayment - projectedBill(electricBill, 5);
+      let net10 = totalLoanPayment - projectedBill(electricBill, 10);
+      let net15 = totalLoanPayment - projectedBill(electricBill, 15);
+      let net20 = totalLoanPayment - projectedBill(electricBill, 20);
+      
+      // 7. Total Project Cost (Solar + Other Products)
+      let totalProjectCost = solarCost + otherCost;
+      
+      // 8. Display results
+      let output = `
+        <h3>Results</h3>
+        <p><strong>Total Project Cost:</strong> $${formatNumber(totalProjectCost)}</p>
+        <p><strong>Total Solar Eligible Amount:</strong> $${formatNumber(totalSolarEligible)}</p>
+        <p><strong>30% Tax Credit:</strong> $${formatNumber(taxCredit)}</p>
+        <hr>
+        <p><strong>Monthly Payment for Solar (20 yrs @ 5.99%):</strong> $${formatNumber(monthlySolarPayment)}</p>
+        <p><strong>Monthly Payment for Other Products (10 yrs @ 8.99%):</strong> $${formatNumber(monthlyOtherPayment)}</p>
+        <p><strong>Total Monthly Loan Payment:</strong> $${formatNumber(totalLoanPayment)}</p>
+        <hr>
+        <p><strong>Effective Monthly Payment After Deducting Electric Bill:</strong></p>
+        <p>Now (Year 0): $${formatNumber(netNow)}</p>
+        <p>After 5 years: $${formatNumber(net5)}</p>
+        <p>After 10 years: $${formatNumber(net10)}</p>
+        <p>After 15 years: $${formatNumber(net15)}</p>
+        <p>After 20 years: $${formatNumber(net20)}</p>
+      `;
+      
+      document.getElementById('results').innerHTML = output;
+    }
+    
+    // Add event listener to ensure the button works even on iPhone
+    document.getElementById('calculateBtn').addEventListener('click', calculate);
+  </script>
+</body>
+</html>
