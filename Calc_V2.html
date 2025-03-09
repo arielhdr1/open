@@ -47,6 +47,10 @@
     label {
       font-weight: bold;
     }
+    .small-text {
+      font-size: 0.9em;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -65,7 +69,22 @@
   <label for="electricBill">Current Monthly Electric Bill ($):</label>
   <input type="number" id="electricBill" placeholder="e.g. 150">
   
-  <!-- Added an id to the button for the event listener -->
+  <!-- Custom Loan Terms: -->
+  <div class="small-text">
+    <p><strong>Customize Loan Terms (optional):</strong></p>
+    <label for="solarTerm">Solar Loan Term (years):</label>
+    <input type="number" id="solarTerm" placeholder="e.g. 20" value="20">
+    
+    <label for="solarRate">Solar Interest Rate (%):</label>
+    <input type="number" id="solarRate" placeholder="e.g. 5.99" value="5.99">
+    
+    <label for="otherTerm">Other Products Loan Term (years):</label>
+    <input type="number" id="otherTerm" placeholder="e.g. 10" value="10">
+    
+    <label for="otherRate">Other Products Interest Rate (%):</label>
+    <input type="number" id="otherRate" placeholder="e.g. 8.99" value="8.99">
+  </div>
+  
   <button id="calculateBtn">Calculate</button>
   
   <div id="results" class="result"></div>
@@ -103,18 +122,24 @@
       let eligibleAmount = parseFloat(document.getElementById('eligibleAmount').value) || 0;
       let electricBill = parseFloat(document.getElementById('electricBill').value) || 0;
       
+      // Get custom loan terms if provided
+      let solarTerm = parseFloat(document.getElementById('solarTerm').value) || 20;
+      let solarRate = parseFloat(document.getElementById('solarRate').value) || 5.99;
+      let otherTerm = parseFloat(document.getElementById('otherTerm').value) || 10;
+      let otherRate = parseFloat(document.getElementById('otherRate').value) || 8.99;
+      
       // 2. Calculate total solar-eligible cost & tax credit
       let totalSolarEligible = solarCost + eligibleAmount;
       let taxCredit = 0.30 * totalSolarEligible;
       
       // 3. Calculate monthly payments
-      //    a) Solar portion: 20 years @ 5.99%
+      //    a) Solar portion: using custom solar loan term and interest rate
       let solarPrincipal = solarCost + eligibleAmount; 
-      let monthlySolarPayment = calculateMonthlyPayment(solarPrincipal, 5.99, 20);
+      let monthlySolarPayment = calculateMonthlyPayment(solarPrincipal, solarRate, solarTerm);
       
-      //    b) Other product portion: 10 years @ 8.99%
+      //    b) Other product portion: using custom other loan term and interest rate
       let otherPrincipal = otherCost - eligibleAmount;
-      let monthlyOtherPayment = calculateMonthlyPayment(otherPrincipal, 8.99, 10);
+      let monthlyOtherPayment = calculateMonthlyPayment(otherPrincipal, otherRate, otherTerm);
       
       // 4. Calculate total monthly payment
       let totalLoanPayment = monthlySolarPayment + monthlyOtherPayment;
@@ -138,8 +163,8 @@
         <p><strong>Total Solar Eligible Amount:</strong> $${formatNumber(totalSolarEligible)}</p>
         <p><strong>30% Tax Credit:</strong> $${formatNumber(taxCredit)}</p>
         <hr>
-        <p><strong>Monthly Payment for Solar (20 yrs @ 5.99%):</strong> $${formatNumber(monthlySolarPayment)}</p>
-        <p><strong>Monthly Payment for Other Products (10 yrs @ 8.99%):</strong> $${formatNumber(monthlyOtherPayment)}</p>
+        <p><strong>Monthly Payment for Solar (over ${solarTerm} yrs @ ${solarRate}%):</strong> $${formatNumber(monthlySolarPayment)}</p>
+        <p><strong>Monthly Payment for Other Products (over ${otherTerm} yrs @ ${otherRate}%):</strong> $${formatNumber(monthlyOtherPayment)}</p>
         <p><strong>Total Monthly Loan Payment:</strong> $${formatNumber(totalLoanPayment)}</p>
         <hr>
         <p><strong>Effective Monthly Payment After Deducting Electric Bill:</strong></p>
@@ -153,7 +178,7 @@
       document.getElementById('results').innerHTML = output;
     }
     
-    // Add event listener to ensure the button works even on iPhone
+    // Add event listener to ensure the button works properly
     document.getElementById('calculateBtn').addEventListener('click', calculate);
   </script>
 </body>
