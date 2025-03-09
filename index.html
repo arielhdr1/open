@@ -60,6 +60,12 @@
       font-size: 0.9em;
       margin-bottom: 10px;
     }
+    /* Ensure toggle buttons remain clear when active or focused */
+    .toggle-button:focus, .toggle-button:active {
+      outline: none;
+      background-color: transparent;
+      color: #4285F4;
+    }
     #customTerms, #taxCreditResults {
       display: none;
       margin-bottom: 10px;
@@ -83,7 +89,7 @@
   <input type="text" id="electricBill" placeholder="e.g. 150" inputmode="numeric">
   
   <!-- Toggle for custom loan terms -->
-  <button type="button" class="toggle-button" id="toggleTermsBtn">Customize Loan Terms</button>
+  <button type="button" class="toggle-button" id="toggleTermsBtn">Customize Loan Term</button>
   
   <div id="customTerms" class="small-text">
     <p><strong>Customize Loan Terms (optional):</strong></p>
@@ -125,7 +131,6 @@
       let value = el.value.replace(/,/g, '');
       if(value === "" || isNaN(value)) return;
       let num = parseFloat(value);
-      // Format all numbers consistently
       el.value = num.toLocaleString('en-US', {maximumFractionDigits: 2});
     }
     
@@ -147,10 +152,10 @@
       let customDiv = document.getElementById('customTerms');
       if (!customDiv.style.display || customDiv.style.display === "none") {
         customDiv.style.display = "block";
-        this.textContent = "Hide Custom Loan Terms";
+        this.textContent = "Hide Customize Loan Term";
       } else {
         customDiv.style.display = "none";
-        this.textContent = "Customize Loan Terms";
+        this.textContent = "Customize Loan Term";
       }
     });
     
@@ -219,7 +224,6 @@
       document.getElementById('results').innerHTML = resultsHTML;
       
       // Compute Payment with Tax Credit for Solar:
-      // The solar principal becomes (solarCost + eligibleAmount - taxCredit)
       let solarPrincipalWithCredit = (solarCost + eligibleAmount) - taxCredit;
       if (solarPrincipalWithCredit < 0) solarPrincipalWithCredit = 0;
       let monthlySolarPaymentWithCredit = calculateMonthlyPayment(solarPrincipalWithCredit, solarRate, solarTerm);
@@ -246,9 +250,8 @@
       
       document.getElementById('taxCreditResults').innerHTML = taxCreditHTML;
       
-      // Show the tax credit toggle button if not already visible
+      // Show the tax credit toggle button if not already visible and reset its state
       document.getElementById('toggleTaxCreditBtn').style.display = "block";
-      // Hide tax credit results by default
       document.getElementById('taxCreditResults').style.display = "none";
       document.getElementById('toggleTaxCreditBtn').textContent = "Show Payment with 30% Tax Credit";
     }
