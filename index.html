@@ -52,23 +52,23 @@
       color: #666;
     }
     .toggle-button {
-  background-color: #4285F4;
-  color: white;
+  background: none;
+  border: none;
+  color: #4285F4;
   text-decoration: underline;
   cursor: pointer;
   font-size: 0.9em;
   margin-bottom: 10px;
-  border: none;
-  padding: 8px;
+  transition: background-color 0.2s, color 0.2s;
+  padding: 4px 8px;
   border-radius: 4px;
 }
 
-/* When hovering or active, keep white text */
 .toggle-button:hover,
 .toggle-button:active,
 .toggle-button:focus {
+  background-color: #4285F4;
   color: white;
-  background-color: #357ae8; /* Optionally a darker blue on hover */
   outline: none;
 }
   </style>
