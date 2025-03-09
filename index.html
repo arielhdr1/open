@@ -52,24 +52,25 @@
       color: #666;
     }
     .toggle-button {
-      background: none;
-      border: none;
-      color: #4285F4;
-      text-decoration: underline;
-      cursor: pointer;
-      font-size: 0.9em;
-      margin-bottom: 10px;
-    }
-    /* Ensure toggle buttons remain clear when active or focused */
-    .toggle-button:focus, .toggle-button:active {
-      outline: none;
-      background-color: transparent;
-      color: #4285F4;
-    }
-    #customTerms, #taxCreditResults {
-      display: none;
-      margin-bottom: 10px;
-    }
+  background-color: #4285F4;
+  color: white;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-bottom: 10px;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* When hovering or active, keep white text */
+.toggle-button:hover,
+.toggle-button:active,
+.toggle-button:focus {
+  color: white;
+  background-color: #357ae8; /* Optionally a darker blue on hover */
+  outline: none;
+}
   </style>
 </head>
 <body>
