@@ -60,7 +60,7 @@
       font-size: 0.9em;
       margin-bottom: 10px;
     }
-    #customTerms {
+    #customTerms, #taxCreditResults {
       display: none;
       margin-bottom: 10px;
     }
@@ -104,6 +104,12 @@
   
   <div id="results" class="result"></div>
   
+  <!-- Toggle button for tax credit results -->
+  <button type="button" class="toggle-button" id="toggleTaxCreditBtn" style="display:none;">Show Payment with 30% Tax Credit</button>
+  
+  <!-- Div for tax credit results -->
+  <div id="taxCreditResults" class="result"></div>
+  
   <script>
     // Helper function to format numbers with commas and two decimals
     function formatNumber(num) {
@@ -116,19 +122,11 @@
     // Format input field on blur and remove formatting on focus
     function formatInputField(event) {
       let el = event.target;
-      // Remove existing commas
       let value = el.value.replace(/,/g, '');
-      if(value === "" || isNaN(value)) {
-        return;
-      }
+      if(value === "" || isNaN(value)) return;
       let num = parseFloat(value);
-      // Only format if 5 digits or more
-      if(num >= 10000) {
-        el.value = num.toLocaleString('en-US', {maximumFractionDigits: 2});
-      } else {
-        // Optionally, you can still format for consistency
-        el.value = num.toLocaleString('en-US', {maximumFractionDigits: 2});
-      }
+      // Format all numbers consistently
+      el.value = num.toLocaleString('en-US', {maximumFractionDigits: 2});
     }
     
     function unformatInputField(event) {
@@ -136,7 +134,7 @@
       el.value = el.value.replace(/,/g, '');
     }
     
-    // Add event listeners to input fields for formatting
+    // Attach formatting to all numeric fields
     let inputIds = ['solarCost', 'otherCost', 'eligibleAmount', 'electricBill', 'solarTerm', 'solarRate', 'otherTerm', 'otherRate'];
     inputIds.forEach(id => {
       let input = document.getElementById(id);
@@ -144,10 +142,10 @@
       input.addEventListener('blur', formatInputField);
     });
     
-    // Toggle for custom loan terms
+    // Toggle custom loan terms
     document.getElementById('toggleTermsBtn').addEventListener('click', function() {
       let customDiv = document.getElementById('customTerms');
-      if (customDiv.style.display === "none" || customDiv.style.display === "") {
+      if (!customDiv.style.display || customDiv.style.display === "none") {
         customDiv.style.display = "block";
         this.textContent = "Hide Custom Loan Terms";
       } else {
@@ -161,11 +159,8 @@
     function calculateMonthlyPayment(principal, annualRate, termYears) {
       let monthlyRate = (annualRate / 100) / 12;
       let n = termYears * 12;
-      if (monthlyRate === 0) {
-        return principal / n;
-      }
-      return principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) 
-             / (Math.pow(1 + monthlyRate, n) - 1);
+      if (monthlyRate === 0) return principal / n;
+      return principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
     }
     
     // Projected electric bill after 'years', given an 8% annual increase
@@ -174,52 +169,40 @@
     }
     
     function calculate() {
-      // 1. Get user inputs (removing commas before converting to numbers)
+      // Retrieve user inputs (removing commas)
       let solarCost = parseFloat(document.getElementById('solarCost').value.replace(/,/g, '')) || 0;
       let otherCost = parseFloat(document.getElementById('otherCost').value.replace(/,/g, '')) || 0;
       let eligibleAmount = parseFloat(document.getElementById('eligibleAmount').value.replace(/,/g, '')) || 0;
       let electricBill = parseFloat(document.getElementById('electricBill').value.replace(/,/g, '')) || 0;
       
-      // Get custom loan terms if provided
+      // Custom loan terms (or default)
       let solarTerm = parseFloat(document.getElementById('solarTerm').value.replace(/,/g, '')) || 20;
       let solarRate = parseFloat(document.getElementById('solarRate').value.replace(/,/g, '')) || 5.99;
       let otherTerm = parseFloat(document.getElementById('otherTerm').value.replace(/,/g, '')) || 10;
       let otherRate = parseFloat(document.getElementById('otherRate').value.replace(/,/g, '')) || 8.99;
       
-      // 2. Calculate total solar-eligible cost & tax credit
+      // Calculate totals and tax credit
       let totalSolarEligible = solarCost + eligibleAmount;
       let taxCredit = 0.30 * totalSolarEligible;
       
-      // 3. Calculate monthly payments
-      //    a) Solar portion: using custom solar loan term and interest rate
+      // Normal Calculation (without tax credit)
       let solarPrincipal = solarCost + eligibleAmount; 
       let monthlySolarPayment = calculateMonthlyPayment(solarPrincipal, solarRate, solarTerm);
-      
-      //    b) Other product portion: using custom other loan term and interest rate
       let otherPrincipal = otherCost - eligibleAmount;
       let monthlyOtherPayment = calculateMonthlyPayment(otherPrincipal, otherRate, otherTerm);
-      
-      // 4. Calculate total monthly payment
       let totalLoanPayment = monthlySolarPayment + monthlyOtherPayment;
-      
-      // 5. Effective Monthly Payment "Now" (subtracting current electric bill)
       let netNow = totalLoanPayment - electricBill;
-      
-      // 6. Effective Monthly Payment after 5, 10, 15, 20 years
       let net5  = totalLoanPayment - projectedBill(electricBill, 5);
       let net10 = totalLoanPayment - projectedBill(electricBill, 10);
       let net15 = totalLoanPayment - projectedBill(electricBill, 15);
       let net20 = totalLoanPayment - projectedBill(electricBill, 20);
-      
-      // 7. Total Project Cost (Solar + Other Products)
       let totalProjectCost = solarCost + otherCost;
       
-      // 8. Display results
-      let output = `
+      let resultsHTML = `
         <h3>Results</h3>
         <p><strong>Total Project Cost:</strong> $${formatNumber(totalProjectCost)}</p>
         <p><strong>Total Solar Eligible Amount:</strong> $${formatNumber(totalSolarEligible)}</p>
-        <p><strong>30% Tax Credit:</strong> $${formatNumber(taxCredit)}</p>
+        <p><strong>30% Tax Credit (for reference):</strong> $${formatNumber(taxCredit)}</p>
         <hr>
         <p><strong>Monthly Payment for Solar (over ${solarTerm} yrs @ ${solarRate}%):</strong> $${formatNumber(monthlySolarPayment)}</p>
         <p><strong>Monthly Payment for Other Products (over ${otherTerm} yrs @ ${otherRate}%):</strong> $${formatNumber(monthlyOtherPayment)}</p>
@@ -233,11 +216,57 @@
         <p>After 20 years: $${formatNumber(net20)}</p>
       `;
       
-      document.getElementById('results').innerHTML = output;
+      document.getElementById('results').innerHTML = resultsHTML;
+      
+      // Compute Payment with Tax Credit for Solar:
+      // The solar principal becomes (solarCost + eligibleAmount - taxCredit)
+      let solarPrincipalWithCredit = (solarCost + eligibleAmount) - taxCredit;
+      if (solarPrincipalWithCredit < 0) solarPrincipalWithCredit = 0;
+      let monthlySolarPaymentWithCredit = calculateMonthlyPayment(solarPrincipalWithCredit, solarRate, solarTerm);
+      let totalLoanPaymentWithCredit = monthlySolarPaymentWithCredit + monthlyOtherPayment;
+      let netNowWithCredit = totalLoanPaymentWithCredit - electricBill;
+      let net5WithCredit  = totalLoanPaymentWithCredit - projectedBill(electricBill, 5);
+      let net10WithCredit = totalLoanPaymentWithCredit - projectedBill(electricBill, 10);
+      let net15WithCredit = totalLoanPaymentWithCredit - projectedBill(electricBill, 15);
+      let net20WithCredit = totalLoanPaymentWithCredit - projectedBill(electricBill, 20);
+      
+      let taxCreditHTML = `
+        <h3>Results (With 30% Tax Credit Applied)</h3>
+        <p><strong>Adjusted Solar Principal:</strong> $${formatNumber(solarPrincipalWithCredit)}</p>
+        <p><strong>Monthly Payment for Solar (over ${solarTerm} yrs @ ${solarRate}%):</strong> $${formatNumber(monthlySolarPaymentWithCredit)}</p>
+        <p><strong>Total Monthly Loan Payment:</strong> $${formatNumber(totalLoanPaymentWithCredit)}</p>
+        <hr>
+        <p><strong>Effective Monthly Payment After Deducting Electric Bill:</strong></p>
+        <p>Now (Year 0): $${formatNumber(netNowWithCredit)}</p>
+        <p>After 5 years: $${formatNumber(net5WithCredit)}</p>
+        <p>After 10 years: $${formatNumber(net10WithCredit)}</p>
+        <p>After 15 years: $${formatNumber(net15WithCredit)}</p>
+        <p>After 20 years: $${formatNumber(net20WithCredit)}</p>
+      `;
+      
+      document.getElementById('taxCreditResults').innerHTML = taxCreditHTML;
+      
+      // Show the tax credit toggle button if not already visible
+      document.getElementById('toggleTaxCreditBtn').style.display = "block";
+      // Hide tax credit results by default
+      document.getElementById('taxCreditResults').style.display = "none";
+      document.getElementById('toggleTaxCreditBtn').textContent = "Show Payment with 30% Tax Credit";
     }
     
     // Add event listener to the calculate button
     document.getElementById('calculateBtn').addEventListener('click', calculate);
+    
+    // Toggle display for tax credit results
+    document.getElementById('toggleTaxCreditBtn').addEventListener('click', function() {
+      let taxCreditDiv = document.getElementById('taxCreditResults');
+      if (!taxCreditDiv.style.display || taxCreditDiv.style.display === "none") {
+        taxCreditDiv.style.display = "block";
+        this.textContent = "Hide Payment with 30% Tax Credit";
+      } else {
+        taxCreditDiv.style.display = "none";
+        this.textContent = "Show Payment with 30% Tax Credit";
+      }
+    });
   </script>
 </body>
 </html>
